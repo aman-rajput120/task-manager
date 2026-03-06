@@ -7,8 +7,8 @@ SECRET_KEY = 'django-insecure-taskmanager-secret-key-2024'
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
-
+ALLOWED_HOSTS = ['.vercel.app']
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
