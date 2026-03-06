@@ -1,0 +1,52 @@
+{% extends 'tasks/base.html' %}
+{% block title %}Edit Task — TaskFlow{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .edit-wrap { max-width: 600px; margin: 2rem auto; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; font-size: 0.9rem; margin-bottom: 1.5rem; transition: color 0.2s; }
+    .back-link:hover { color: var(--text); }
+    .edit-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; }
+    .edit-card h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .edit-card .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .error-list { color: #fca5a5; font-size: 0.8rem; margin-top: 4px; list-style: none; }
+    .actions-row { display: flex; gap: 1rem; margin-top: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-wrap">
+    <a href="{% url 'dashboard' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    <div class="edit-card">
+        <h2><i class="fas fa-pencil" style="color:var(--primary);"></i> Edit Task</h2>
+        <p class="subtitle">Task #{{ task.id }} &mdash; created {{ task.created_at|date:"M d, Y" }}</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Task Title *</label>
+                {{ form.title }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                {{ form.description }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Priority</label>
+                {{ form.priority }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                {{ form.category }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Due Date</label>
+                {{ form.due_date }}
+            </div>
+            <div class="actions-row">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'tasks/base.html' %}
+{% block title %}Login — TaskFlow{% endblock %}
+
+{% block extra_styles %}
+<style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+    .main { width: 100%; display: flex; align-items: center; justify-content: center; }
+    .auth-wrap { display: flex; gap: 4rem; align-items: center; max-width: 900px; width: 100%; }
+    .auth-hero { flex: 1; }
+    .auth-hero h1 {
+        font-size: 3rem; font-weight: 800; line-height: 1.1; margin-bottom: 1rem;
+        background: linear-gradient(135deg, #fff 0%, var(--primary) 60%, var(--secondary) 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .auth-hero p { color: var(--muted); font-size: 1.1rem; line-height: 1.7; margin-bottom: 2rem; }
+    .feature-list { list-style: none; }
+    .feature-list li { display: flex; align-items: center; gap: 10px; margin-bottom: 0.8rem; color: var(--muted); font-size: 0.95rem; }
+    .feature-list li i { color: var(--primary); width: 20px; }
+    .auth-card {
+        flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+        padding: 2.5rem; max-width: 400px; width: 100%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.1);
+    }
+    .auth-card-header { margin-bottom: 2rem; }
+    .auth-card-header h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .auth-card-header p { color: var(--muted); font-size: 0.9rem; }
+    .auth-divider { text-align: center; margin: 1rem 0; color: var(--muted); font-size: 0.85rem; position: relative; }
+    .auth-divider::before, .auth-divider::after {
+        content: ''; position: absolute; top: 50%; width: 40%; height: 1px;
+        background: var(--border);
+    }
+    .auth-divider::before { left: 0; }
+    .auth-divider::after { right: 0; }
+    .auth-link { text-align: center; margin-top: 1.5rem; color: var(--muted); font-size: 0.9rem; }
+    .auth-link a { color: var(--primary); text-decoration: none; font-weight: 500; }
+    .auth-link a:hover { text-decoration: underline; }
+    .error-list { color: #fca5a5; font-size: 0.8rem; margin-top: 4px; }
+    .error-list li { margin-bottom: 2px; }
+    .input-wrap { position: relative; }
+    .input-wrap .form-input { padding-left: 2.5rem; }
+    .input-icon { position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.9rem; }
+    .orb { width: 250px; height: 250px; border-radius: 50%; margin-bottom: 2rem;
+        background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+        border: 1px solid rgba(99,102,241,0.2); display: flex; align-items: center; justify-content: center; }
+    .orb i { font-size: 5rem; color: var(--primary); opacity: 0.6; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-hero">
+        <div class="orb"><i class="fas fa-tasks"></i></div>
+        <h1>Manage your<br>tasks smarter.</h1>
+        <p>Stay organized, focused, and in control of everything you need to accomplish.</p>
+        <ul class="feature-list">
+            <li><i class="fas fa-shield-alt"></i> Secure user authentication</li>
+            <li><i class="fas fa-tags"></i> Priority & category labels</li>
+            <li><i class="fas fa-chart-bar"></i> Progress tracking dashboard</li>
+            <li><i class="fas fa-filter"></i> Smart filtering & search</li>
+        </ul>
+    </div>
+    <div class="auth-card">
+        <div class="auth-card-header">
+            <h2>Welcome back 👋</h2>
+            <p>Sign in to your TaskFlow account</p>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <div class="input-wrap">
+                    <i class="fas fa-user input-icon"></i>
+                    {{ form.username }}
+                </div>
+                {% if form.username.errors %}<ul class="error-list">{% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <div class="input-wrap">
+                    <i class="fas fa-lock input-icon"></i>
+                    {{ form.password }}
+                </div>
+                {% if form.password.errors %}<ul class="error-list">{% for e in form.password.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            {% if form.non_field_errors %}
+            <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:0.75rem;margin-bottom:1rem;color:#fca5a5;font-size:0.875rem;">
+                <i class="fas fa-exclamation-circle"></i> Invalid username or password.
+            </div>
+            {% endif %}
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </button>
+        </form>
+        <div class="auth-link">Don't have an account? <a href="{% url 'register' %}">Create one</a></div>
+    </div>
+</div>
+{% endblock %}

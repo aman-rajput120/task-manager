@@ -1,0 +1,93 @@
+{% extends 'tasks/base.html' %}
+{% block title %}Register — TaskFlow{% endblock %}
+
+{% block extra_styles %}
+<style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+    .main { width: 100%; display: flex; align-items: center; justify-content: center; }
+    .auth-card {
+        background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+        padding: 2.5rem; max-width: 480px; width: 100%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.1);
+    }
+    .auth-card-header { margin-bottom: 2rem; text-align: center; }
+    .auth-card-header .logo { font-size: 3rem; margin-bottom: 1rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .auth-card-header h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .auth-card-header p { color: var(--muted); font-size: 0.9rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .error-list { color: #fca5a5; font-size: 0.8rem; margin-top: 4px; }
+    .error-list li { margin-bottom: 2px; }
+    .input-wrap { position: relative; }
+    .input-wrap .form-input { padding-left: 2.5rem; }
+    .input-icon { position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.9rem; pointer-events: none; }
+    .auth-link { text-align: center; margin-top: 1.5rem; color: var(--muted); font-size: 0.9rem; }
+    .auth-link a { color: var(--primary); text-decoration: none; font-weight: 500; }
+    .auth-link a:hover { text-decoration: underline; }
+    .password-hint { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="auth-card-header">
+        <div class="logo"><i class="fas fa-bolt"></i></div>
+        <h2>Create your account</h2>
+        <p>Join TaskFlow and start managing your tasks</p>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">First Name</label>
+                <div class="input-wrap">
+                    <i class="fas fa-user input-icon"></i>
+                    {{ form.first_name }}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Last Name</label>
+                <div class="input-wrap">
+                    <i class="fas fa-user input-icon"></i>
+                    {{ form.last_name }}
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Username</label>
+            <div class="input-wrap">
+                <i class="fas fa-at input-icon"></i>
+                {{ form.username }}
+            </div>
+            {% if form.username.errors %}<ul class="error-list">{% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        <div class="form-group">
+            <label class="form-label">Email</label>
+            <div class="input-wrap">
+                <i class="fas fa-envelope input-icon"></i>
+                {{ form.email }}
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-wrap">
+                <i class="fas fa-lock input-icon"></i>
+                {{ form.password1 }}
+            </div>
+            {% if form.password1.errors %}<ul class="error-list">{% for e in form.password1.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            <p class="password-hint">Must be at least 8 characters</p>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Confirm Password</label>
+            <div class="input-wrap">
+                <i class="fas fa-lock input-icon"></i>
+                {{ form.password2 }}
+            </div>
+            {% if form.password2.errors %}<ul class="error-list">{% for e in form.password2.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+            <i class="fas fa-user-plus"></i> Create Account
+        </button>
+    </form>
+    <div class="auth-link">Already have an account? <a href="{% url 'login' %}">Sign in</a></div>
+</div>
+{% endblock %}

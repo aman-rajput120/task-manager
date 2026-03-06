@@ -1,0 +1,333 @@
+{% extends 'tasks/base.html' %}
+{% block title %}Dashboard — TaskFlow{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .page-header p { color: var(--muted); }
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card {
+        background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+        padding: 1.5rem; position: relative; overflow: hidden; transition: transform 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); }
+    .stat-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        background: var(--accent-color, var(--primary));
+    }
+    .stat-card.total::before { background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+    .stat-card.completed::before { background: var(--success); }
+    .stat-card.pending::before { background: var(--warning); }
+    .stat-card.urgent::before { background: var(--danger); }
+    .stat-value { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.3rem; }
+    .stat-label { color: var(--muted); font-size: 0.85rem; font-weight: 500; }
+    .stat-icon { position: absolute; right: 1.2rem; top: 50%; transform: translateY(-50%); font-size: 2rem; opacity: 0.1; }
+    .stat-card.total .stat-value { background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-card.completed .stat-value { color: var(--success); }
+    .stat-card.pending .stat-value { color: var(--warning); }
+    .stat-card.urgent .stat-value { color: var(--danger); }
+    /* Progress */
+    .progress-wrap { margin-top: 1rem; }
+    .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; background: var(--success); transition: width 0.5s; }
+    .progress-label { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+    /* Layout */
+    .layout { display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem; align-items: start; }
+    /* Add Task Card */
+    .add-card {
+        background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+        padding: 1.5rem; position: sticky; top: 80px;
+    }
+    .add-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 8px; }
+    .add-card h3 i { color: var(--primary); }
+    /* Tasks Panel */
+    .tasks-panel { display: flex; flex-direction: column; gap: 1rem; }
+    /* Filters */
+    .filters-bar {
+        background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+        padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    }
+    .search-wrap { flex: 1; min-width: 200px; position: relative; }
+    .search-wrap input { padding-left: 2.5rem; }
+    .search-icon { position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--muted); }
+    .filter-selects { display: flex; gap: 0.5rem; }
+    .filter-selects select { padding: 0.5rem 0.8rem; font-size: 0.85rem; }
+    .filter-btn {
+        padding: 0.5rem 1rem; border-radius: 8px; background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 500; font-family: 'Inter', sans-serif;
+        transition: all 0.2s;
+    }
+    .filter-btn:hover { opacity: 0.9; }
+    .clear-btn {
+        padding: 0.5rem 0.8rem; border-radius: 8px; background: transparent;
+        color: var(--muted); border: 1px solid var(--border); cursor: pointer;
+        font-size: 0.85rem; font-family: 'Inter', sans-serif; text-decoration: none; transition: all 0.2s;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+    .clear-btn:hover { border-color: var(--danger); color: var(--danger); }
+    /* Task Cards */
+    .tasks-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .task-card {
+        background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+        padding: 1.2rem 1.5rem; display: flex; align-items: flex-start; gap: 1rem;
+        transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .task-card:hover { border-color: rgba(99,102,241,0.3); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .task-card.completed-task { opacity: 0.6; }
+    .task-card.completed-task .task-title { text-decoration: line-through; }
+    .task-card::before {
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+        background: var(--border);
+    }
+    .task-card.priority-high::before { background: var(--danger); }
+    .task-card.priority-medium::before { background: var(--warning); }
+    .task-card.priority-low::before { background: var(--redalert); }
+    .task-check {
+        width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+        transition: all 0.2s; flex-shrink: 0; margin-top: 2px; text-decoration: none;
+    }
+    .task-check:hover { border-color: var(--success); background: rgba(16,185,129,0.1); }
+    .task-check.checked { background: var(--success); border-color: var(--success); }
+    .task-check.checked i { color: white; font-size: 0.7rem; }
+    .task-body { flex: 1; min-width: 0; }
+    .task-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .task-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.6rem; line-height: 1.5; }
+    .task-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .badge {
+        font-size: 0.73rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 20px;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+   .badge-priority-high {
+        background: rgba(239,68,68,0.15); 
+        color: #fca5a5; 
+        border: 1px solid rgba(239,68,68,0.2);
+        animation: flashHigh 1.2s infinite;
+    }
+@keyframes flashHigh {
+    0% {
+        box-shadow: 0 0 5px #ff4d4d;
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        box-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
+        transform: scale(1.05);
+        opacity: 0.8;
+    }
+
+    100% {
+        box-shadow: 0 0 5px #ff4d4d;
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+    .badge-priority-medium { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.2); }
+    .badge-priority-low { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
+    .badge-category { background: rgba(99,102,241,0.1); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2); }
+    .badge-date { background: rgba(6,182,212,0.1); color: #67e8f9; border: 1px solid rgba(6,182,212,0.2); }
+    .badge-completed { background: rgba(16,185,129,0.1); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
+    .badge-pending { background: rgba(245,158,11,0.1); color: #fcd34d; border: 1px solid rgba(245,158,11,0.2); }
+    .task-actions { display: flex; gap: 0.4rem; flex-shrink: 0; margin-left: auto; }
+    .action-btn {
+        width: 32px; height: 32px; border-radius: 8px; border: none; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; font-size: 0.8rem;
+        transition: all 0.2s; text-decoration: none; background: rgba(255,255,255,0.05);
+        color: var(--muted);
+    }
+    .action-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); transform: scale(1.1); }
+    .action-btn.edit:hover { color: var(--primary); background: rgba(99,102,241,0.1); }
+    .action-btn.delete:hover { color: var(--danger); background: rgba(239,68,68,0.1); }
+    .action-btn.undo:hover { color: var(--warning); background: rgba(245,158,11,0.1); }
+    /* Empty state */
+    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+    .empty-state i { font-size: 4rem; margin-bottom: 1rem; opacity: 0.3; display: block; }
+    .empty-state h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text); }
+    /* Task count */
+    .results-info { font-size: 0.85rem; color: var(--muted); }
+    .results-info span { color: var(--text); font-weight: 600; }
+    /* Responsive */
+    @media (max-width: 900px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .layout { grid-template-columns: 1fr; }
+        .add-card { position: static; }
+    }
+    @media (max-width: 600px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Good {% now "H" as hour %}{% if hour|add:"0" < 12 %}Morning{% elif hour|add:"0" < 17 %}Afternoon{% else %}Evening{% endif %}, {{ user.first_name|default:user.username }} ✨</h1>
+    <p>Here's what's on your plate today</p>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card total">
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-label">Total Tasks</div>
+        <i class="fas fa-list-check stat-icon"></i>
+        {% if total > 0 %}
+        <div class="progress-wrap">
+            <div class="progress-bar"><div class="progress-fill" style="width:{% widthratio completed total 100 %}%"></div></div>
+            <div class="progress-label">{% widthratio completed total 100 %}% complete</div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="stat-card completed">
+        <div class="stat-value">{{ completed }}</div>
+        <div class="stat-label">Completed</div>
+        <i class="fas fa-check-circle stat-icon"></i>
+    </div>
+    <div class="stat-card pending">
+        <div class="stat-value">{{ pending }}</div>
+        <div class="stat-label">Pending</div>
+        <i class="fas fa-clock stat-icon"></i>
+    </div>
+    <div class="stat-card urgent">
+        <div class="stat-value">{{ high_priority }}</div>
+        <div class="stat-label">High Priority</div>
+        <i class="fas fa-fire stat-icon"></i>
+    </div>
+</div>
+
+<div class="layout">
+    <!-- Add Task Sidebar -->
+    <div class="add-card">
+        <h3><i class="fas fa-plus-circle"></i> Add New Task</h3>
+        <form method="post" action="{% url 'add_task' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Task Title *</label>
+                {{ form.title }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                {{ form.description }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Priority</label>
+                {{ form.priority }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                {{ form.category }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Due Date</label>
+                {{ form.due_date }}
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+                <i class="fas fa-plus"></i> Add Task
+            </button>
+        </form>
+    </div>
+
+    <!-- Tasks Panel -->
+    <div class="tasks-panel">
+        <!-- Filters -->
+        <form method="get" class="filters-bar">
+            <div class="search-wrap">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" name="search" class="form-input" placeholder="Search tasks..." value="{{ search_query }}">
+            </div>
+            <div class="filter-selects">
+                <select name="status" class="form-select" style="width:auto;">
+                    <option value="">All Status</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                </select>
+                <select name="priority" class="form-select" style="width:auto;">
+                    <option value="">All Priority</option>
+                    <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>High</option>
+                    <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Medium</option>
+                    <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Low</option>
+                </select>
+                <select name="category" class="form-select" style="width:auto;">
+                    <option value="">All Categories</option>
+                    <option value="work" {% if category_filter == 'work' %}selected{% endif %}>Work</option>
+                    <option value="personal" {% if category_filter == 'personal' %}selected{% endif %}>Personal</option>
+                    <option value="shopping" {% if category_filter == 'shopping' %}selected{% endif %}>Shopping</option>
+                    <option value="health" {% if category_filter == 'health' %}selected{% endif %}>Health</option>
+                    <option value="other" {% if category_filter == 'other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            <button type="submit" class="filter-btn"><i class="fas fa-filter"></i> Filter</button>
+            {% if status_filter or priority_filter or category_filter or search_query %}
+            <a href="{% url 'dashboard' %}" class="clear-btn"><i class="fas fa-times"></i> Clear</a>
+            {% endif %}
+        </form>
+
+        <!-- Results -->
+        <div class="results-info">
+            Showing <span>{{ tasks.count }}</span> task{{ tasks.count|pluralize }}
+            {% if status_filter or priority_filter or category_filter or search_query %} (filtered){% endif %}
+        </div>
+
+        <!-- Task List -->
+        <div class="tasks-list">
+            {% for task in tasks %}
+            <div class="task-card priority-{{ task.priority }} {% if task.status == 'completed' %}completed-task{% endif %}">
+                <!-- Complete/Undo toggle -->
+                {% if task.status == 'pending' %}
+                <a href="{% url 'mark_completed' task.id %}" class="task-check" title="Mark complete"></a>
+                {% else %}
+                <a href="{% url 'mark_pending' task.id %}" class="task-check checked" title="Mark pending"><i class="fas fa-check"></i></a>
+                {% endif %}
+
+                <div class="task-body">
+                    <div class="task-title">{{ task.title }}</div>
+                    {% if task.description %}
+                    <div class="task-desc">{{ task.description|truncatechars:100 }}</div>
+                    {% endif %}
+                    <div class="task-meta">
+                        <span class="badge badge-priority-{{ task.priority }}">
+                            {% if task.priority == 'high' %}<i class="fas fa-fire"></i>
+                            {% elif task.priority == 'medium' %}<i class="fas fa-minus"></i>
+                            {% else %}<i class="fas fa-arrow-down"></i>{% endif %}
+                            {{ task.get_priority_display }}
+                        </span>
+                        <span class="badge badge-category">
+                            {% if task.category == 'work' %}<i class="fas fa-briefcase"></i>
+                            {% elif task.category == 'personal' %}<i class="fas fa-user"></i>
+                            {% elif task.category == 'shopping' %}<i class="fas fa-shopping-cart"></i>
+                            {% elif task.category == 'health' %}<i class="fas fa-heart"></i>
+                            {% else %}<i class="fas fa-tag"></i>{% endif %}
+                            {{ task.get_category_display }}
+                        </span>
+                        {% if task.due_date %}
+                        <span class="badge badge-date"><i class="fas fa-calendar"></i> {{ task.due_date }}</span>
+                        {% endif %}
+                        <span class="badge {% if task.status == 'completed' %}badge-completed{% else %}badge-pending{% endif %}">
+                            {% if task.status == 'completed' %}<i class="fas fa-check"></i>{% else %}<i class="fas fa-clock"></i>{% endif %}
+                            {{ task.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="task-actions">
+                    <a href="{% url 'edit_task' task.id %}" class="action-btn edit" title="Edit"><i class="fas fa-pencil"></i></a>
+                    {% if task.status == 'completed' %}
+                    <a href="{% url 'mark_pending' task.id %}" class="action-btn undo" title="Mark as pending"><i class="fas fa-undo"></i></a>
+                    {% endif %}
+                    <a href="{% url 'delete_task' task.id %}" class="action-btn delete" title="Delete"
+                       onclick="return confirm('Delete this task?')"><i class="fas fa-trash"></i></a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>No tasks found</h3>
+                <p>{% if status_filter or priority_filter or category_filter or search_query %}Try adjusting your filters{% else %}Add your first task to get started!{% endif %}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
